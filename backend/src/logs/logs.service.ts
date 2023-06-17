@@ -12,7 +12,6 @@ export class LogsService {
         private readonly logsGateway: LogsGateway,
         @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
         @Inject('MQTT_CLIENT') private readonly mqttClient: mqtt.MqttClient,
-        // Inject the non-subscriber Redis client
         @Inject('REDIS_NON_SUBSCRIBER_CLIENT') private readonly redisNonSubscriberClient: Redis,
     ) {
         this.subscribeToSensorLogs();
