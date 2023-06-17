@@ -1,0 +1,32 @@
+// schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Log {
+  id             Int      @id @default(autoincrement())
+  DeviceID       String
+  DeviceTime     DateTime
+  Latitude       Float
+  Longitude      Float
+  Altitude       Float
+  Course         Float
+  Satellites     Int
+  SpeedOTG       Float
+  AccelerationX1 Float
+  AccelerationY1 Float
+  Signal         Int
+  PowerSupply    Int
+}
+
+model Warning {
+  id          Int      @id @default(autoincrement())
+  DeviceID    String
+  WarningTime DateTime
+  WarningType Int
+}
