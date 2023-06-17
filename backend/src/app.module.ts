@@ -53,7 +53,6 @@ export const REDIS_CONFIG = {
         return client;
       },
     },
-    // Add a new provider for the non-subscriber Redis client
     {
       provide: 'REDIS_NON_SUBSCRIBER_CLIENT',
       useFactory: () => {
