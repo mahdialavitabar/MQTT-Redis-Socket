@@ -49,12 +49,7 @@ export class LogsService {
                 if (log.WarningType) {
                     this.redisNonSubscriberClient.publish('has_warnings_queue', JSON.stringify(log))
                 }
-                this.redisClient.subscribe('has_warnings_queue');
-                this.redisClient.on('message', async (channel, message) => {
-                    if (channel === 'has_warnings_queue') {
-                        this.redisNonSubscriberClient.publish('detection_queue', message);
-                    }
-                });
+
 
             }
         });
@@ -80,6 +75,12 @@ export class LogsService {
                 this.redisNonSubscriberClient.set(`warning:${warning.DeviceID}`, JSON.stringify(warning));
                 // Broadcast the warning log to all connected WebSocket clients
                 this.logsGateway.handleNewWarningLog(warning);
+            }
+        });
+        this.redisClient.subscribe('has_warnings_queue');
+        this.redisClient.on('message', async (channel, message) => {
+            if (channel === 'has_warnings_queue') {
+                this.redisNonSubscriberClient.publish('detection_queue', message);
             }
         });
     }

@@ -54,12 +54,6 @@ let LogsService = exports.LogsService = class LogsService {
                 if (log.WarningType) {
                     this.redisNonSubscriberClient.publish('has_warnings_queue', JSON.stringify(log));
                 }
-                this.redisClient.subscribe('has_warnings_queue');
-                this.redisClient.on('message', async (channel, message) => {
-                    if (channel === 'has_warnings_queue') {
-                        this.redisNonSubscriberClient.publish('detection_queue', message);
-                    }
-                });
             }
         });
     }
@@ -79,6 +73,12 @@ let LogsService = exports.LogsService = class LogsService {
                 await this.prisma.warning.create({ data: warning });
                 this.redisNonSubscriberClient.set(`warning:${warning.DeviceID}`, JSON.stringify(warning));
                 this.logsGateway.handleNewWarningLog(warning);
+            }
+        });
+        this.redisClient.subscribe('has_warnings_queue');
+        this.redisClient.on('message', async (channel, message) => {
+            if (channel === 'has_warnings_queue') {
+                this.redisNonSubscriberClient.publish('detection_queue', message);
             }
         });
     }
