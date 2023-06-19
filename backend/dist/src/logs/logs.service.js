@@ -51,7 +51,15 @@ let LogsService = exports.LogsService = class LogsService {
                 await this.prisma.log.create({ data: log });
                 this.redisNonSubscriberClient.set(`log:${log.DeviceID}`, JSON.stringify(log));
                 this.logsGateway.handleNewLog(log);
-                this.redisNonSubscriberClient.publish('has_warnings_queue', JSON.stringify(log));
+                if (log.WarningType) {
+                    this.redisNonSubscriberClient.publish('has_warnings_queue', JSON.stringify(log));
+                }
+                this.redisClient.subscribe('has_warnings_queue');
+                this.redisClient.on('message', async (channel, message) => {
+                    if (channel === 'has_warnings_queue') {
+                        this.redisNonSubscriberClient.publish('detection_queue', message);
+                    }
+                });
             }
         });
     }

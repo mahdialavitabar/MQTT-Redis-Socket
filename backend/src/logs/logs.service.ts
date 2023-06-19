@@ -46,7 +46,16 @@ export class LogsService {
                 // Broadcast the log to all connected WebSocket clients
                 this.logsGateway.handleNewLog(log);
                 // Publish the log to the has_warnings_queue if it has a warning
-                this.redisNonSubscriberClient.publish('has_warnings_queue', JSON.stringify(log))
+                if (log.WarningType) {
+                    this.redisNonSubscriberClient.publish('has_warnings_queue', JSON.stringify(log))
+                }
+                this.redisClient.subscribe('has_warnings_queue');
+                this.redisClient.on('message', async (channel, message) => {
+                    if (channel === 'has_warnings_queue') {
+                        this.redisNonSubscriberClient.publish('detection_queue', message);
+                    }
+                });
+
             }
         });
     }
