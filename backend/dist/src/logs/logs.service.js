@@ -92,6 +92,7 @@ let LogsService = exports.LogsService = class LogsService {
             }
             if (topic === 'sensor_logs' && logsTypes) {
                 const log = JSON.parse(payload.toString());
+                console.log(log);
                 this.redisNonSubscriberClient.set(`log:${log.DeviceID}`, JSON.stringify(log));
                 this.logsGateway.handleNewLog(log);
                 if (log.WarningType) {

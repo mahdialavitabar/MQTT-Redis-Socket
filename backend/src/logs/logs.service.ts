@@ -68,7 +68,6 @@ export class LogsService {
             }else{
                 logsTypes=false
             }
-            console.log(logsTypes)
 return logsTypes
         }
 
@@ -116,7 +115,6 @@ return logsTypes
             }else{
                 warningLogsTypes=false
             }
-            console.log(warningLogsTypes)
             return warningLogsTypes
         }
         this.redisClient.subscribe('detection_queue');
@@ -130,7 +128,6 @@ return logsTypes
             }
             if (channel === 'detection_queue'&& message.includes("WarningType")&& !message.includes(`DeviceId`)&&warningLogsTypes) {
                 const warning = JSON.parse(message);
-                console.log("warning",warning)
                 await this.prisma.warning.create({ data: warning });
 
                 // Cache the warning log in Redis
