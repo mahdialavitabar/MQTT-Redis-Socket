@@ -30,12 +30,10 @@ export class LogsService {
     private async getAllPersistedLogs(){
         const persistedLogs = await this.prisma.log.findMany()
         this.logsGateway.handleNewLog(persistedLogs);
-        console.log(persistedLogs)
     }
     private async getAllPersistedWarningLogs(){
         const persistedWarningLogs = await this.prisma.warning.findMany()
         this.logsGateway.handleNewWarningLog(persistedWarningLogs);
-        console.log(persistedWarningLogs)
     }
     private async subscribeToSensorLogs() {
         this.mqttClient.on('connect', () => {
@@ -52,16 +50,40 @@ export class LogsService {
             console.log('Redis client error:', error);
         });
 
-
+        function isILogs(obj: any) {
+            let logsTypes;
+            if( typeof obj.DeviceID === 'string' &&
+                typeof obj.DeviceTime === 'string' &&
+                typeof obj.Latitude === 'number' &&
+                typeof obj.Longitude === 'number' &&
+                typeof obj.Altitude === 'number' &&
+                typeof obj.Course === 'number' &&
+                typeof obj.Satellites === 'number' &&
+                typeof obj.SpeedOTG === 'number' &&
+                typeof obj.AccelerationX1 === 'number' &&
+                typeof obj.AccelerationY1 === 'number' &&
+                typeof obj.Signal === 'number' &&
+                typeof obj.PowerSupply === 'number')    {
+                logsTypes=true
+            }else{
+                logsTypes=false
+            }
+            console.log(logsTypes)
+return logsTypes
+        }
 
 
         this.mqttClient.subscribe('sensor_logs');
         this.mqttClient.on('message', async (topic, payload) => {
-            console.log(topic,payload)
-            if (topic === 'sensor_logs') {
+            let logsTypes
+            try {
+                const parsedPayload = JSON.parse(payload.toString());
+                 logsTypes = isILogs(parsedPayload);
+            } catch (error) {
+                console.log('Invalid JSON payload:', payload.toString());
+            }
+            if (topic === 'sensor_logs'&& logsTypes) {
                 const log = JSON.parse(payload.toString());
-                console.log(topic,log)
-
                 // Cache the log in Redis
                 this.redisNonSubscriberClient.set(`log:${log.DeviceID}`, JSON.stringify(log));
                 // Broadcast the log to all connected WebSocket clients
@@ -84,13 +106,31 @@ export class LogsService {
         this.redisClient.on('error', (error) => {
             console.log('Redis client error:', error);
         });
-
+        function isWarningsILogs(obj: any) {
+            let warningLogsTypes;
+            if( typeof obj.DeviceID === 'string' &&
+                typeof obj.WarningTime === 'string' &&
+                typeof obj.WarningType === 'number'
+                )    {
+                warningLogsTypes=true
+            }else{
+                warningLogsTypes=false
+            }
+            console.log(warningLogsTypes)
+            return warningLogsTypes
+        }
         this.redisClient.subscribe('detection_queue');
         this.redisClient.on('message', async (channel, message:any) => {
-            console.log(channel,message);
-            if (channel === 'detection_queue'&& message.includes("WarningType")&& !message.includes(`DeviceId`)) {
+            let warningLogsTypes
+            try {
+                const parsedPayload = JSON.parse(message);
+                warningLogsTypes = isWarningsILogs(parsedPayload);
+            } catch (error) {
+                console.log('Invalid JSON payload:', message);
+            }
+            if (channel === 'detection_queue'&& message.includes("WarningType")&& !message.includes(`DeviceId`)&&warningLogsTypes) {
                 const warning = JSON.parse(message);
-                console.log(warning)
+                console.log("warning",warning)
                 await this.prisma.warning.create({ data: warning });
 
                 // Cache the warning log in Redis
