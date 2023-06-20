@@ -28,6 +28,24 @@ let LogsService = exports.LogsService = class LogsService {
         this.redisNonSubscriberClient = redisNonSubscriberClient;
         this.subscribeToSensorLogs();
         this.subscribeToDetectionQueue();
+        this.getAllPersistedLogs();
+        this.getAllPersistedWarningLogs();
+        setInterval(() => {
+            this.getAllPersistedLogs();
+        }, 1000);
+        setInterval(() => {
+            this.getAllPersistedWarningLogs();
+        }, 1000);
+    }
+    async getAllPersistedLogs() {
+        const persistedLogs = await this.prisma.log.findMany();
+        this.logsGateway.handleNewLog(persistedLogs);
+        console.log(persistedLogs);
+    }
+    async getAllPersistedWarningLogs() {
+        const persistedWarningLogs = await this.prisma.warning.findMany();
+        this.logsGateway.handleNewWarningLog(persistedWarningLogs);
+        console.log(persistedWarningLogs);
     }
     async subscribeToSensorLogs() {
         this.mqttClient.on('connect', () => {
@@ -48,11 +66,13 @@ let LogsService = exports.LogsService = class LogsService {
             if (topic === 'sensor_logs') {
                 const log = JSON.parse(payload.toString());
                 console.log(topic, log);
-                await this.prisma.log.create({ data: log });
                 this.redisNonSubscriberClient.set(`log:${log.DeviceID}`, JSON.stringify(log));
                 this.logsGateway.handleNewLog(log);
                 if (log.WarningType) {
                     this.redisNonSubscriberClient.publish('has_warnings_queue', JSON.stringify(log));
+                }
+                else {
+                    await this.prisma.log.create({ data: log });
                 }
             }
         });
@@ -67,7 +87,7 @@ let LogsService = exports.LogsService = class LogsService {
         this.redisClient.subscribe('detection_queue');
         this.redisClient.on('message', async (channel, message) => {
             console.log(channel, message);
-            if (channel === 'detection_queue') {
+            if (channel === 'detection_queue' && message.includes("WarningType") && !message.includes(`DeviceId`)) {
                 const warning = JSON.parse(message);
                 console.log(warning);
                 await this.prisma.warning.create({ data: warning });
@@ -88,7 +108,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
-], LogsService.prototype, "subscribeToSensorLogs", null);
+], LogsService.prototype, "getAllPersistedLogs", null);
 exports.LogsService = LogsService = __decorate([
     (0, common_1.Injectable)(),
     __param(2, (0, common_1.Inject)('REDIS_CLIENT')),

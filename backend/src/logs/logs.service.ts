@@ -16,8 +16,27 @@ export class LogsService {
     ) {
         this.subscribeToSensorLogs();
         this.subscribeToDetectionQueue();
+        this.getAllPersistedLogs();
+        this.getAllPersistedWarningLogs();
+        setInterval(() => {
+            this.getAllPersistedLogs();
+        }, 1000);
+        setInterval(() => {
+            this.getAllPersistedWarningLogs();
+        }, 1000);
     }
     @UseInterceptors(CacheInterceptor)
+
+    private async getAllPersistedLogs(){
+        const persistedLogs = await this.prisma.log.findMany()
+        this.logsGateway.handleNewLog(persistedLogs);
+        console.log(persistedLogs)
+    }
+    private async getAllPersistedWarningLogs(){
+        const persistedWarningLogs = await this.prisma.warning.findMany()
+        this.logsGateway.handleNewWarningLog(persistedWarningLogs);
+        console.log(persistedWarningLogs)
+    }
     private async subscribeToSensorLogs() {
         this.mqttClient.on('connect', () => {
             console.log('MQTT client connected');
@@ -33,6 +52,9 @@ export class LogsService {
             console.log('Redis client error:', error);
         });
 
+
+
+
         this.mqttClient.subscribe('sensor_logs');
         this.mqttClient.on('message', async (topic, payload) => {
             console.log(topic,payload)
@@ -44,6 +66,7 @@ export class LogsService {
                 this.redisNonSubscriberClient.set(`log:${log.DeviceID}`, JSON.stringify(log));
                 // Broadcast the log to all connected WebSocket clients
                 this.logsGateway.handleNewLog(log);
+
                 // Publish the log to the has_warnings_queue if it has a warning
                 if (log.WarningType) {
                     this.redisNonSubscriberClient.publish('has_warnings_queue', JSON.stringify(log))
@@ -65,7 +88,7 @@ export class LogsService {
         this.redisClient.subscribe('detection_queue');
         this.redisClient.on('message', async (channel, message:any) => {
             console.log(channel,message);
-            if (channel === 'detection_queue'&& message.includes("WarningType")) {
+            if (channel === 'detection_queue'&& message.includes("WarningType")&& !message.includes(`DeviceId`)) {
                 const warning = JSON.parse(message);
                 console.log(warning)
                 await this.prisma.warning.create({ data: warning });

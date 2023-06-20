@@ -7,16 +7,16 @@ import { AgGridReact } from 'ag-grid-react';
 export default function Logs() {
     const [logs, setLogs] = useState<any>([]);
     const [warningLogs, setWarningLogs] = useState<any>([]);
-
+    console.log(logs)
     useEffect(() => {
         const socket = io('http://localhost:3000');
 
         socket.on('log', (log) => {
-            setLogs((logs:any) => [...logs, log]);
+            setLogs(log);
         });
 
         socket.on('warningLog', (warningLog) => {
-            setWarningLogs((warningLogs:any) => [...warningLogs, warningLog]);
+            setWarningLogs(warningLog);
         });
 
         return () => {
