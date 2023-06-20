@@ -39,7 +39,6 @@ export class LogsService {
             if (topic === 'sensor_logs') {
                 const log = JSON.parse(payload.toString());
                 console.log(topic,log)
-                await this.prisma.log.create({ data: log });
 
                 // Cache the log in Redis
                 this.redisNonSubscriberClient.set(`log:${log.DeviceID}`, JSON.stringify(log));
@@ -48,9 +47,9 @@ export class LogsService {
                 // Publish the log to the has_warnings_queue if it has a warning
                 if (log.WarningType) {
                     this.redisNonSubscriberClient.publish('has_warnings_queue', JSON.stringify(log))
+                }else {
+                    await this.prisma.log.create({ data: log });
                 }
-
-
             }
         });
     }
@@ -64,9 +63,9 @@ export class LogsService {
         });
 
         this.redisClient.subscribe('detection_queue');
-        this.redisClient.on('message', async (channel, message) => {
+        this.redisClient.on('message', async (channel, message:any) => {
             console.log(channel,message);
-            if (channel === 'detection_queue') {
+            if (channel === 'detection_queue'&& message.includes("WarningType")) {
                 const warning = JSON.parse(message);
                 console.log(warning)
                 await this.prisma.warning.create({ data: warning });
