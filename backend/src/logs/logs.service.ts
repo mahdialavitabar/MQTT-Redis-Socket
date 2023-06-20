@@ -20,10 +20,10 @@ export class LogsService {
         this.getAllPersistedWarningLogs();
         setInterval(() => {
             this.getAllPersistedLogs();
-        }, 1000);
+        }, 10000);
         setInterval(() => {
             this.getAllPersistedWarningLogs();
-        }, 1000);
+        }, 10000);
     }
     @UseInterceptors(CacheInterceptor)
 

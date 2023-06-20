@@ -32,10 +32,10 @@ let LogsService = exports.LogsService = class LogsService {
         this.getAllPersistedWarningLogs();
         setInterval(() => {
             this.getAllPersistedLogs();
-        }, 1000);
+        }, 10000);
         setInterval(() => {
             this.getAllPersistedWarningLogs();
-        }, 1000);
+        }, 10000);
     }
     async getAllPersistedLogs() {
         const persistedLogs = await this.prisma.log.findMany();

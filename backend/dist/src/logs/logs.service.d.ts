@@ -9,6 +9,8 @@ export declare class LogsService {
     private readonly mqttClient;
     private readonly redisNonSubscriberClient;
     constructor(prisma: PrismaService, logsGateway: LogsGateway, redisClient: Redis, mqttClient: mqtt.MqttClient, redisNonSubscriberClient: Redis);
+    private getAllPersistedLogs;
+    private getAllPersistedWarningLogs;
     private subscribeToSensorLogs;
     private subscribeToDetectionQueue;
 }

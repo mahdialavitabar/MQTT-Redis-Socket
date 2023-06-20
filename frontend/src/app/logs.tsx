@@ -75,14 +75,19 @@ export default function Logs() {
         {
             headerName: 'Device ID',
             field: 'DeviceID',
+            width:300
         },
         {
             headerName: 'Warning Time',
             field: 'WarningTime',
+            width:300
+
         },
         {
             headerName: 'Warning Type',
             field: 'WarningType',
+            width:300
+
         },
     ];
 
